@@ -1,8 +1,8 @@
 ---
 layout: post
 title: oracle数据库备份与还原完整版
-category: Git
-tags: [Git]
+category: oracle
+tags: [oracle]
 ---
 
 备份和还原数据库是我们开发人员的必备技能，在这里写篇文章记录一下，供大家参考。
