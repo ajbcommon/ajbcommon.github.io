@@ -1,0 +1,476 @@
+---
+layout: post
+title: oracle数据库备份与还原完整版
+category: oracle
+tags: [oracle]
+---
+
+@[TOC]
+# 概述
+
+- 内容特点：
+  经验 + 总结，内容全面，实用性强。
+  内容精简，基于命令来讲解 Git 在工作中的应用，快速上手。
+- 环境说明：
+系统：windos 10
+Git版本：2.26.0-64位
+
+# 一、Git简介
+
+## 1. 集中式vs分布式
+### 1.1 集中化的版本控制系统
+在集中化的版本控制系统中，诸如 CVS、Subversion 以及 Perforce 等，都有一个单一的集中管理的服务器，保存所有文件的修订版本，而协同工作的人们都通过客户端连到这台服务器，取出最新的文件或者提交更新。 多年以来，这已成为版本控制系统的标准做法。
+![centralized](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDMyMTE3NDkucG5n?x-oss-process=image/format,png)
+
+缺点：
+- 必须联网（速度慢）。
+- 所有操作必须通过与中心服务器连接才能执行。
+- 中央服务器的单点故障（如果宕机一小时，那么在这一小时内，谁都无法提交更新，也就无法协同工作。 如果中心数据库所在的磁盘发生损坏，又没有做恰当备份，毫无疑问你将丢失所有数据——包括项目的整个变更历史，只剩下人们在各自机器上保留的单独快照）。
+
+### 1.2 分布式版本控制系统
+在分布式版本控制系统中，像 Git、Mercurial、Bazaar 以及 Darcs 等，客户端并不只提取最新版本的文件快照， 而是把代码仓库完整地镜像下来，包括完整的历史记录。 这么一来，任何一处协同工作用的服务器发生故障，事后都可以用任何一个镜像出来的本地仓库恢复。 因为每一次的克隆操作，实际上都是一次对代码仓库的完整备份。
+![distributed](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDMyMTE3MzkucG5n?x-oss-process=image/format,png)
+
+优点：
+- 离线工作（速度很快）。
+- 强大的分支管理能力。
+- 安全性高（每个用户本地都有完整的版本库）。
+
+## 2. Git 是什么？
+> Git是目前最快、最简单也最流行的分布式版本控制系统！
+
+### 1. 直接记录快照，而非差异比较
+- 文件变更流
+其它大部分系统（CVS、Subversion、Perforce、Bazaar 等等）以文件变更列表的方式存储信息， 将它们存储的信息看作是一组基本文件和每个文件随时间逐步累积的差异 （它们通常称作“基于差异”（delta-based） 的版本控制）。
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDcyMTEzMTgucG5n?x-oss-process=image/format,png)
+<center>存储每个文件与初始版本的差异</center>
+
+- 文件快照流
+在 Git 中，每当你提交更新或保存项目状态时，它基本上就会对当时的全部文件创建一个快照并保存这个快照的索引。 为了效率，如果文件没有修改，Git 不再重新存储该文件，而是只保   留一个链接指向之前存储的文件。 Git 对待数据更像是一个快照流。这是 Git 与几乎所有其它版本控制系统的重要区别。
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDcyMTE0NTUucG5n?x-oss-process=image/format,png)
+<center>存储项目随时间改变的快照</center>
+
+### 2. 近乎所有操作都是本地执行
+在 Git 中的绝大多数操作都只需要访问本地文件和资源，一般不需要来自网络上其它计算机的信息。  因为你在本地磁盘上就有项目的完整历史，所以大部分操作看起来瞬间完成。
+
+### 3.Git 保证完整性
+Git 中所有的数据在存储前都计算校验和，然后以校验和来引用。 这意味着不可能在 Git 不知情时更改任何文件内容或目录内容。Git 用以计算校验和的机制叫做 SHA-1 散列（hash，哈希）。 这是一个由 40 个十六进制字符（0-9 和 a-f）组成的字符串，基于 Git 中文件的内容或目录结构计算出来。 SHA-1 哈希看起来是这样：
+```
+24b9da6552252987aa493b52f8696cd6d3b00373
+```
+Git 数据库中保存的信息都是以文件内容的哈希值来索引，而不是文件名。
+
+## 3. Git工作流程
+
+![aHR0cDovL3d3dy5ydWFueWlmZW5nLmNvbS9ibG9naW1nL2Fzc2V0LzIwMTUvYmcyMDE1MTIwOTAxLnBuZw](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDMyMDA4MTUuanBn?x-oss-process=image/format,png)
+
+- Workspace：工作区
+- Index / Stage：暂存区
+- Repository：本地仓库
+- Remote：远程仓库
+
+# 二、安装与配置
+
+## 1. 下载
+- 官网网址，下载速度很慢
+网址：[https://git-scm.com/download/win](https://git-scm.com/download/win)
+- 阿里镜像，下载速度很快
+网址：[https://npm.taobao.org/mirrors/git-for-windows/](https://npm.taobao.org/mirrors/git-for-windows/)
+
+## 2. 安装
+在Windows上安装比较简单，按默认选项安装即可。验证是否安装成功，dos命令：
+```
+$ git  --version
+```
+
+## 3. 配置
+- 配置用户信息(改成你的用户名和邮箱，这是 Git 用来记录操作者信息的，不验证信息的正确性。git config命令的--global参数，表示你这台机器上所有的Git 仓库都会使用这个配置)
+	```
+	$ git config --global user.name "zhoumei"
+	$ git config --global user.email 952409683@qq.com
+	```
+- 查看配置信息
+	```
+	$ git config --list
+	```
+- 查看全局配置信息
+	````
+	$ git config --global --list
+	````
+# 三、初始化本地仓库
+
+- 将尚未进行版本控制的本地目录转换为 Git 仓库
+	```
+	$ git init
+	```
+- 新建一个目录，将其初始化为 Git 仓库
+	```
+	$ git init [project-name]
+	```
+- 从其它服务器克隆一个已存在的 Git 仓库（工作中最常用）
+	```
+	$ git clone [url]
+	```
+# 四、远程仓库
+
+> “origin”是当你运行 git clone 时默认的远程仓库名字。 如果你运行 git clone -o booyah，那么你默认的远程分支名字将会是 booyah/master。
+
+- 查询远程仓库
+ 	```
+	$ git remote
+	```
+- 查看远程仓库的简写与其对应的 URL
+	```
+	$ git remote -v
+	```
+- 查看远程仓库的 URL 与跟踪分支的信息
+	```
+	$ git remote show [remote]
+	```
+- 新增远程仓
+	```
+	$ git remote add origin https://gitee.com/zhoumgt/project01.git
+	```
+- 删除远程仓库
+	```
+	$ git remote remove origin
+	```
+- 配置用户公钥(邮箱填写“安装与配置”步骤中配置的用户邮箱即可)，在~/.ssh目录下（如果没有.ssh文件夹，手动创建一个）执行如下命令：
+	```
+	ssh-keygen -t rsa -C "952409683@qq.com" -f  "gitee"
+	```
+执行完命令后，会在.ssh文件夹下生成两个文件：gitee、gitee.pub(gitee是本地私钥，gitee.pub是要在Gitee上配置的公钥)：
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDYxMzIwMTkucG5n?x-oss-process=image/format,png)
+在~/.ssh文件夹下添加config文件（目的是解决SSH冲突）
+- config配置文件内容：
+	```
+	#gitee
+	Host gitee.com
+	HostName gitee.com
+	PreferredAuthentications publickey
+	IdentityFile ~/.ssh/gitee
+	```
+- 登录Gitee账号，添加SSH公钥：
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDYxMzExMDYucG5n?x-oss-process=image/format,png)
+- 把本地项目推送到远程仓库（Gitee）
+	```
+	$ git push -u origin master
+	```
+- 拉取远程仓库的代码
+	```
+	$ git pull [remote] [branch]
+	```
+- 把本地代码推送到远程仓库
+	```
+	$ git push [remote] [branch]
+	```
+
+# 五、常用命令
+
+> 所有命令都必须在Git仓库的根目录下执行。
+
+## 1. 查看状态
+- 查看文件变更状态
+	```
+	$ git status
+	```
+
+## 2. 添加文件
+- 添加指定文件到暂存区
+	```
+	$ git add [file]
+	```
+- 添加指定目录到暂存区，包括子目录
+	```
+	$ git add [dir]
+	```
+- 添加当前目录的所有文件到暂存区(-A或--all或.效果相同，也可以使用*进行匹配)
+	```
+	$ git add .
+	```
+## 3. 文件重命名
+- 文件重命名（对未添加到暂存区的新增文件无效）
+	```
+	$ git mv [file-original] [file-renamed]
+	```
+
+## 4. 删除文件
+
+- 删除指定文件
+	```
+	$ git rm [file]
+	```
+- 删除文件夹
+	```
+	$ git rm -r [dir]
+	```
+
+## 5. 提交文件
+- 提交暂存区的所有文件到仓库(-m表示注释，必填)
+	```
+	$ git commit -m [message]
+	```
+- 提交暂存区的指定文件到仓库区
+	```
+	$ git commit [file1] [file2] ... -m [message]
+	```
+- 跳过使用暂存区，直接提交到仓库区(没跟踪的新增文件不会提交)
+	```
+	$ git commit -a -m [message]
+	```
+
+## 6. 操作日志
+- 查看提交记录
+	```
+	$ git log
+	$ git log --pretty=oneline //将每个提交放在一行显示
+	```
+- 查看所有操作记录（版本回退时查看版本id时很有用）
+	```
+	$ git reflog
+	```
+
+# 六、撤销操作
+
+## 1. 恢复工作区
+
+> 暂存区和未追踪的新增文件保持不变
+
+- 恢复工作区指定文件的更改
+	```
+	$ git restore [file]
+	```
+- 恢复工作区所有文件的更改
+	```
+	$ git restore .
+	```
+- 恢复指定文件的内容到某个版本
+	```
+	$ git checkout [版本id]  [fileName]
+	```
+
+## 2. 撤出暂存区
+
+> 工作区的内容保持不变
+
+- 撤出暂存区的指定文件
+	```
+	$ git restore --staged  [file]
+	```
+- 撤出暂存区的所有文件
+	```
+	$ git restore --staged .
+	```
+## 3. 现场保护
+- 把工作区改动的文件放入缓存
+	```
+	$ git stash
+	```
+- 把放入缓存中的文件恢复到工作区
+	```
+	$ git stash pop
+	```
+
+# 七、版本回退
+
+- 重置暂存区与工作区，与上一次commit保持一致（未追踪的新增文件保持不变）
+	```
+	$ git reset --hard
+	```
+- 回退到上一个版本
+	```
+	$ git reset --hard HEAD^
+	```
+- 回退到上上个版本，以此类推，一次提交即为一个版本
+	```
+	$ git reset --hard HEAD^^ 
+	```
+- 回退到指定版本
+	```
+	$ git reset --hard  [版本id]
+	```
+备注：
+`git reset --soft   版本id`：回退到某个版本，只回退了commit的信息，该提交包含的更改变为modify状态，如果还要提交，直接commit即可；
+`git reset --hard  版本id`：彻底回退到某个版本，工作区和暂存区的更改都将被撤销；
+
+# 八、分支
+
+- 列出所有本地分支（ 当前分支前面会标一个*号）
+	```
+	$ git branch
+	```
+- 列出所有远程分支
+	```
+	$ git branch -r
+	```
+- 列出所有本地分支和远程分支
+	```
+	$ git branch -a
+	```
+- 新建一个分支，但依然停留在当前分支
+	```
+	$ git branch [branch]
+	```
+- 新建一个分支，并切换到该分支
+	```
+	$ git checkout -b [branch]
+	```
+- 把本地分支推送到远程分支（远程自动创建与该分支同名的分支）
+	```
+	$ git push -u origin [branch]
+	```
+- 在本地创建和远程分支对应的分支
+	```
+	$ git checkout -b [本地分支名] origin/[远程分支名]
+	```
+- 建立本地分支和远程分支的关联
+	```
+	$ git branch --set-upstream-to=origin/[远程分支名称]  [本地分支名称]
+	```
+- 切换分支，并更新工作区
+	```
+	$ git checkout [branch]
+	```
+- 删除本地分支(未合并的分支，使用 git branch -d 命令删除时会失败。可以使用 -D 选项强制删除)
+	```
+	$ git branch -d [branch]
+	```
+- 删除远程分支
+	```
+	$ git push origin --delete [branch]
+	```
+
+# 九、合并分支
+
+- 工作场景描述：
+从远程master分支clone项目到本地（本地自动生成master分支与远程master分支进行关联）；
+在本地新增开发分支zhoumei，推送到远程个人分支zhoumei；
+在本地开发分支开发代码，提交并推送到远程个人分支，待功能开发完成后，申请合并代码（从远程个人分支合并到远程master分支），完成开发。
+
+- 提交完要提交的代码
+	```
+	$ git commit -m 'xxx功能开发完成'
+	```
+- 把改动但不需要提交的文件，放到缓存区
+	```
+	$ git stash
+	```
+- 查看文件变更状态，确认改动的文件全部放到缓存区
+	```
+	$ git status
+	```
+- 从远程master分支更新代码到当前分支（自动merge）
+	```
+	$ git pull origin master
+	```
+- 如果有冲突文件，解决冲突（手动合并）
+
+- 冲突文件手动合并完成后，提交所有要提交的文件
+	```
+	$ git add .
+	$ git commit  -m '解决xxx合并冲突'
+	```
+- 推送到远程个人分支zhoumei
+	```
+	$ git push oringin zhoumei
+	```
+- 在远程个人分支发起代码合并请求，通知负责合并代码的人，完成代码合并
+
+- 恢复缓存中的文件
+	```
+	$ git stash pop
+	```
+# 十、打标签
+
+> 像其他版本控制系统（VCS）一样，Git 可以给仓库历史中的某一个提交打上标签，以示重要。 比较有代表性的是人们会使用这个功能来标记发布结点（ v1.0 、 v2.0 等等）。标签总是和某个commit挂钩。如果这个commit既出现在master分支，又出现在dev分支，那么在这两个分支上都可以看到这个标签。
+
+- 列出所有tag
+	```
+	$ git tag
+	```
+- 新建一个tag在当前commit(含工作区和暂存区的文件)
+	```
+	$ git tag [tag]
+	```
+- 新建一个tag在指定commit
+	```
+	$ git tag [tag] [版本id]
+	```
+- 查看tag信息
+	```
+	$ git show [tag]
+	```
+- 提交指定tag（默认情况下，git push 命令并不会传送标签到远程仓库服务器上。 在创建完标签后你必须显式地推送标签到共享服务器上）
+	```
+	$ git push [remote] [tag]
+	```
+- 提交所有tag
+	```
+	$ git push [remote] --tags
+	```
+- 删除本地tag
+	```
+	$ git tag -d [tag]
+	```
+- 删除远程tag
+	```
+	$ git push [remote] --delete [tagname]
+	```
+- 新建一个分支，指向某个tag
+	```
+	$ git checkout -b [branch] [tag]
+	```
+# 十一、在IDEA中使用Git
+- 配置git
+  Settings-> Version Control-> Git，Path to Git execultable修改为：安装根目录\bin\git.exe。点击Test进行测试：
+![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDcyMjU5MTEucG5n?x-oss-process=image/format,png)
+- 执行命令
+在Terminal窗口执行git命令：
+[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-7GvawcYR-1592025704861)(https://zhoumei.github.io/images/imgs/Snipaste_2020-06-08_14-34-16.png)]
+- 解决控制台中文乱码：
+  修改控制台shell路径：Settings-> Tools -> Terminal，Shell path修改为：安装根目录\bin\bash.exe
+  ![](https://imgconvert.csdnimg.cn/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL3pob3VtZWkvaW1hZ2VzL2ltZ3MvMjAyMDA2MDcyMzAyMzkucG5n?x-oss-process=image/format,png)
+  在idea安装目录下找到idea.exe.vmoptions和idea64.exe.vmoptions文件，在文件的最后添加：
+  
+  ```
+  -Dfile.encoding=UTF-8
+  ```
+  在git安装目录下找到etc/bash.bashrc文件，在文件的最后添加：
+  ```
+  export LANG="zh_CN.UTF-8"
+  export LC_ALL="zh_CN.UTF-8"
+  ```
+  退出控制台，重新进入即可。
+- 提交&推送：
+VCS-> Commit-> Commit and Push-> 输入远程仓库的账号和密码。
+- 颜色提示：
+红色：未加入版本控制
+绿色：已加入版本控制，未提交
+蓝色：已加入版本控制，已提交，有修改
+白色：已加入版本控制，已提交，未修改
+
+# 十二、添加忽略文件
+
+有些文件无需纳入 Git 的管理，也不希望它们总出现在未跟踪文件列表。 通常都是些自动生成的文件，比如日志文件，或者编译过程中创建的临时文件等。 在这种情况下，我们可以在Git仓库的跟目录创建一个名为 `.gitignore` 的文件，列出要忽略的文件。 
+
+```
+# 忽略所有的 .a 文件
+*.a
+
+# 但跟踪所有的 lib.a，即便你在前面忽略了 .a 文件
+!lib.a
+
+# 只忽略当前目录下的 TODO 文件，而不忽略 subdir/TODO
+/TODO
+
+# 忽略任何目录下名为 build 的文件夹
+build/
+
+# 忽略 doc/notes.txt，但不忽略 doc/server/arch.txt
+doc/*.txt
+
+# 忽略 doc/ 目录及其所有子目录下的 .pdf 文件
+doc/**/*.pdf
+```
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2020061314095057.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM0OTY3Nzcw,size_16,color_FFFFFF,t_70)
