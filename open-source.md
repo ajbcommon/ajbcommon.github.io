@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Open Source Projects
+title: Open Source
 menu: open-source
 css: ['open-source.css']
 javascript: ['underscore-min.js']
