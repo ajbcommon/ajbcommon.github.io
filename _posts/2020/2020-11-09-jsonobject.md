@@ -258,9 +258,9 @@ Student stuObj = JSON.toJavaObject(person, Student.class);
 ```
   
 ---
-- 本文为转载文章，转载请标明出处。
-- [原文链接: https://baijiahao.baidu.com/s?id=1652966908554903975&wfr=spider&for=pc](https://baijiahao.baidu.com/s?id=1652966908554903975&wfr=spider&for=pc)
-- [本文链接: http://sfpyblog.com//json/2020/11/09/jsonobject.html](http://sfpyblog.com//json/2020/11/09/jsonobject.html)
+> 本文为转载文章，转载请标明出处:
+原文链接: https://baijiahao.baidu.com/s?id=1652966908554903975&wfr=spider&for=pc
+本文链接: http://sfpyblog.com//json/2020/11/09/jsonobject.html
 
 
 
