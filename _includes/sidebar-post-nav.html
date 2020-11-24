@@ -10,6 +10,14 @@
 <script type="text/javascript">
 
     $(document).ready(function(){
+
+        //判断是不是手机端访问
+        //手机端访问，不需要文章目录
+        let mobile_flag = isMobile(); // false为PC端，true为手机端
+        if(mobile_flag){
+            return;
+        }
+
         $( "article h1" ).each(function( index ) {
             $(".post-directory dl").append("<dt><a class=\"jumper\" hre=#" +
                     $(this).attr("id")
@@ -59,5 +67,35 @@
 
         });
     });
+
+    /**
+     * 判断访问类型是电脑还是手机
+     * false为PC端，true为手机端
+     */
+    function isMobile() {
+        var userAgentInfo = navigator.userAgent;
+
+        var mobileAgents = [ "Android", "iPhone", "SymbianOS", "Windows Phone", "iPad","iPod"];
+
+        var mobile_flag = false;
+
+        //根据userAgent判断是否是手机
+        for (var v = 0; v < mobileAgents.length; v++) {
+            if (userAgentInfo.indexOf(mobileAgents[v]) > 0) {
+                mobile_flag = true;
+                break;
+            }
+        }
+
+        var screen_width = window.screen.width;
+        var screen_height = window.screen.height;
+
+        //根据屏幕分辨率判断是否是手机
+        if(screen_width < 500 && screen_height < 800){
+            mobile_flag = true;
+        }
+
+        return mobile_flag;
+    }
 
 </script>
