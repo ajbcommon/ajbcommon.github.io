@@ -75,18 +75,21 @@ navs:
 featured_articles:
   -
     href: /2020/11/16/markdown.html
+    category: markdown
     name: Markdown语法
-    desc: Markdown语法汇总，很全很详细！
+    description: Markdown语法汇总，很全很详细！
 
   -
     href: /2020/06/13/git.html
+    category: git
     name: Git教程(2020版)
-    desc: Git入门，快速上手
+    description: Git入门，快速上手
 
   -
     href: /2020/05/07/oracle.html
+    category: oracle
     name: Oracle数据库备份与还原
-    desc: Oracle导出、导入
+    description: Oracle导出、导入
 
 # Sidebar to show popular repo
 side_bar_repo_limit: 5 # Number of repos to show
