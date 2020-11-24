@@ -74,20 +74,17 @@ navs:
 # featured articles
 featured_articles:
   -
-    href: /2020/11/16/markdown.html
-    category: markdown
+    href: /markdown/2020/11/16/markdown.html
     name: Markdown语法
     description: Markdown语法汇总，很全很详细！
 
   -
-    href: /2020/06/13/git.html
-    category: git
+    href: /git/2020/06/13/git.html
     name: Git教程(2020版)
     description: Git入门，快速上手
 
   -
-    href: /2020/05/07/oracle.html
-    category: oracle
+    href: /oracle/2020/05/07/oracle.html
     name: Oracle数据库备份与还原
     description: Oracle导出、导入
 
