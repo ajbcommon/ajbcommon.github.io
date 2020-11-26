@@ -74,6 +74,12 @@ navs:
 # featured articles
 featured_articles:
   -
+    href: /2020/11/25/jekyll.html
+    category: jekyll
+    name: 使用Jekyll搭建免费的个人博客详细教程
+    description: 照着做就可以搭建一个免费的个人博客
+
+  -
     href: /2020/11/16/markdown.html
     category: markdown
     name: 写作排版利器Markdown语法
@@ -84,12 +90,6 @@ featured_articles:
     category: git
     name: Git教程(2020版)
     description: Git入门，快速上手
-
-  -
-    href: /2020/05/07/oracle.html
-    category: oracle
-    name: Oracle数据库备份与还原
-    description: Oracle导出、导入
 
 # Sidebar to show popular repo
 side_bar_repo_limit: 5 # Number of repos to show
@@ -102,7 +102,7 @@ side_bar_repo_limit: 5 # Number of repos to show
 
 
 # For about.html. Fell free to create your own!
-skill_software_keywords: [Java, MySQL, Oracle]
-skill_j2ee_keywords: [Spring, Hibernet, MyBatis, Spring Data JPA]
-skill_web_keywords: [HTML, CSS, JS, JQuery, Ajax, Redis]
+skill_software_keywords: [Java, MySQL, Oracle, Redis]
+skill_j2ee_keywords: [Spring Boot, Hibernet, MyBatis, Spring Data JPA, Elasticsearch]
+skill_web_keywords: [HTML, CSS, JS, JQuery, Ajax]
 skill_mobile_app_keywords: []
