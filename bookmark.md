@@ -4,6 +4,8 @@ title: Bookmark
 subtitle: <span class="mega-octicon octicon-repo"></span>&nbsp;&nbsp; To mark useful libs - tools - books
 menu: Bookmark
 ---
+# Web
+- [常用工具](http://www.cxy521.com/) - 学习平台, 常用工具
 
 # Java
 - [java技术栈](https://how2j.cn/) - JAVA, J2EE, JAVA框架, 中间件, 分布式和集群, 数据库, 实践项目, 面试题
