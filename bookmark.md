@@ -4,12 +4,13 @@ title: Bookmark
 subtitle: <span class="mega-octicon octicon-repo"></span>&nbsp;&nbsp; To mark useful libs - tools - books
 menu: Bookmark
 ---
-# Web
-- [常用工具](http://www.cxy521.com/) - 学习平台, 常用工具
 
 # Java
 - [Java极客技术学习](https://www.javajike.com/) -java, springboot, springcloud, docker教程, memcached教程, mongodb教程, elasticsearch教程, redis教程
 - [Java技术栈](https://how2j.cn/) - JAVA, J2EE, JAVA框架, 中间件, 分布式和集群, 数据库, 实践项目, 面试题
+
+# Web
+- [常用工具](http://www.cxy521.com/) - 学习平台, 常用工具
 
 # 算法
 - [Leetcode算法](http://www.leetcodecn.com/) -基础算法, 经典排序
