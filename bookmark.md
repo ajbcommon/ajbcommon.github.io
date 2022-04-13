@@ -12,6 +12,7 @@ menu: Bookmark
 
 # Web
 - [常用工具](http://www.cxy521.com/) - 学习平台, 常用工具
+- [jQuery插件库](https://www.jq22.com/) - jQuery插件库, 内容比对
 
 # 算法
 - [Leetcode算法](http://www.leetcodecn.com/) -基础算法, 经典排序
